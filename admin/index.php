@@ -1,3 +1,38 @@
+<?php
+    // Start the session at the beginning of the script
+    session_start();
+
+    // Include database connection file
+    include "config.php";
+
+    // Check if the user is already logged in
+    if (isset($_SESSION['username'])) {
+        header("Location: {$hostname}/admin/post.php");
+        exit();
+    }
+
+    // Process the login form submission
+    if (isset($_POST['login'])) {
+        $username = mysqli_real_escape_string($conn, $_POST['username']);
+        $password = md5($_POST['password']);
+
+        $sql = "SELECT user_id, username, role FROM user WHERE username = '{$username}' AND password = '{$password}'";
+        $result = mysqli_query($conn, $sql) or die("Query failed: " . mysqli_error($conn));
+
+        if (mysqli_num_rows($result) > 0) {
+            while ($row = mysqli_fetch_assoc($result)) {
+                $_SESSION['user_id'] = $row['user_id'];
+                $_SESSION['username'] = $row['username'];
+                $_SESSION['user_role'] = $row['role'];
+
+                header("Location: {$hostname}/admin/post.php");
+                exit();
+            }
+        } else {
+            $login_error = "<div class='alert alert-danger'>Username and Password not matched</div>";
+        }
+    }
+?>
 <!doctype html>
 <html>
    <head>
@@ -18,7 +53,7 @@
                         <img class="logo" src="images/news.jpg">
                         <h3 class="heading">Admin</h3>
                         <!-- Form Start -->
-                        <form  action="" method ="POST">
+                        <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="POST">
                             <div class="form-group">
                                 <label>Username</label>
                                 <input type="text" name="username" class="form-control" placeholder="" required>
@@ -29,7 +64,14 @@
                             </div>
                             <input type="submit" name="login" class="btn btn-primary" value="login" />
                         </form>
-                        <!-- /Form  End -->
+                        <!-- /Form End -->
+
+                        <?php
+                        // Display login error message if there is one
+                        if (isset($login_error)) {
+                            echo $login_error;
+                        }
+                        ?>
                     </div>
                 </div>
             </div>
